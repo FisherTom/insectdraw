@@ -1,0 +1,4 @@
+*.svg
+!docs/*.svg
+node_modules/
+.DS_Store

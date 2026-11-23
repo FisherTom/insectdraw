@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Insectdraw Specimen Bench</title>
+<meta name="description" content="Procedurally generated, mix-and-match insect drawings for pen plotters. Plot-ready SVG with one layer per pen.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: a specimen bench. Controls on the left like a drawer index, the plotted plate in the middle,
+   its determination label beneath; a drawer of fresh specimens along the bottom. */
+:root {
+  --bg: #e9ede8;          /* drawer foam, faint green bias */
+  --panel: #f6f8f4;
+  --fg: #1d2522;
+  --muted: #5b6863;
+  --line: #c9d1cb;
+  --accent: #2f5d50;      /* museum-drawer green */
+  --accent-fg: #f3f7f4;
+  --paper: #fdfdfa;       /* the plate is always paper */
+  --flag: #a1532f;        /* marks parts borrowed from another insect */
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --label: "Courier Prime", "Courier New", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121815; --panel: #1a221f; --fg: #e3eae6; --muted: #98a8a1; --line: #2e3a35;
+  --accent: #7fb8a5; --accent-fg: #0e1412; --paper: #f4f4ef; --flag: #e0936b; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121815; --panel: #1a221f; --fg: #e3eae6; --muted: #98a8a1; --line: #2e3a35;
+  --accent: #7fb8a5; --accent-fg: #0e1412; --paper: #f4f4ef; --flag: #e0936b; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; padding-inline: 20px; padding-block: 18px 40px; }
+.wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 20px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(26px, 3.4vw, 38px); letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); max-width: 62ch; }
+
+.bench { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .bench { grid-template-columns: 1fr; } }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.panel h2 { font-family: var(--display); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.field { display: grid; gap: 4px; }
+.field label, .field .lab { font-size: 13px; color: var(--muted); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+input[type=text], select { font: inherit; font-size: 14px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 7px 9px; width: 100%; min-width: 0; }
+input[type=text] { font-family: var(--label); font-style: italic; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+button { font: inherit; font-size: 14px; font-weight: 700; border-radius: 4px; padding: 8px 12px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-fg); }
+button.ghost { background: transparent; color: var(--accent); }
+button:disabled { opacity: 0.5; cursor: progress; }
+button:focus-visible, input:focus-visible, select:focus-visible, .tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.val { font-family: var(--label); font-size: 13px; color: var(--fg); font-variant-numeric: tabular-nums; }
+.check { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+
+.stage { display: grid; gap: 14px; min-width: 0; }
+.plate { background: var(--paper); border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 1px 0 var(--line), 0 12px 30px -18px rgba(0,0,0,.35); position: relative; display: grid; place-items: center; padding: 10px; min-height: 360px; }
+.plate svg { width: 100%; height: auto; max-height: 78vh; display: block; }
+.plate .busy { position: absolute; top: 12px; right: 14px; font-family: var(--label); font-size: 13px; color: #5b6863; }
+
+.det { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 700px) { .det { grid-template-columns: 1fr; } }
+.label-card { font-family: var(--label); background: var(--panel); border: 1px solid var(--line); border-radius: 2px; padding: 14px 16px; display: grid; gap: 8px; min-width: 0; }
+.label-card .binomial { font-size: 19px; font-style: italic; font-weight: 700; overflow-wrap: anywhere; }
+.label-card .meta { font-size: 13px; color: var(--muted); }
+.parts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 2px 14px; font-size: 13px; margin: 0; }
+.parts div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted var(--line); padding: 2px 0; }
+.parts dt { color: var(--muted); }
+.parts dd { margin: 0; text-align: right; }
+.parts .borrowed dd { color: var(--flag); font-weight: 700; }
+.parts .borrowed dd::after { content: " *"; }
+.legend { font-size: 12px; color: var(--muted); }
+
+.pens { display: grid; gap: 6px; }
+.pen { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 14px; }
+.sw { width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--line); }
+.pen .n { font-family: var(--label); font-size: 12px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.cmd { font-family: var(--label); font-size: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.drawer { display: grid; gap: 10px; }
+.drawer-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tiles { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 1100px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tile { background: var(--paper); border: 1px solid var(--line); border-radius: 3px; padding: 6px; cursor: pointer; display: grid; gap: 4px; text-align: center; min-width: 0; color: #1d2522; }
+.tile .art { aspect-ratio: 3 / 4; display: grid; place-items: center; max-width: 100%; }
+.tile svg { width: 100%; height: 100%; }
+.tile .nm { font-family: var(--label); font-style: italic; font-size: 12px; overflow-wrap: anywhere; }
+.tile .ar { font-size: 11px; color: #5b6863; letter-spacing: 0.06em; text-transform: uppercase; }
+.tile.loading .art { color: #5b6863; font-family: var(--label); font-size: 12px; }
+.note { font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { .tile { transition: transform .15s ease; } .tile:hover { transform: translateY(-2px); } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Insectdraw</h1>
+    <p>Procedural insects for the pen plotter. Eighteen body plans share one parts bin of 147 variants. The weirdness dial decides how often a part is borrowed from a different kind of insect.</p>
+  </header>
+
+  <div class="bench">
+    <form class="panel" id="controls" autocomplete="off">
+      <h2>Specimen</h2>
+      <div class="field">
+        <label for="seed">Name (the seed)</label>
+        <input type="text" id="seed" value="Helio somnensis" spellcheck="false">
+      </div>
+      <div class="row">
+        <button type="button" id="newBtn">New specimen</button>
+        <button type="submit" class="ghost" id="drawBtn">Redraw</button>
+      </div>
+      <div class="field">
+        <label for="arch">Archetype</label>
+        <select id="arch">
+          <option value="">Any (from the seed)</option>
+          <optgroup label="Beetles and kin"><option value="beetle">beetle</option><option value="weevil">weevil</option><option value="earwig">earwig</option></optgroup><optgroup label="Moths and butterflies"><option value="butterfly">butterfly</option><option value="moth">moth</option></optgroup><optgroup label="Net and clear wings"><option value="dragonfly">dragonfly</option><option value="lacewing">lacewing</option><option value="mayfly">mayfly</option><option value="cicada">cicada</option></optgroup><optgroup label="Wasps, bees, ants, flies"><option value="wasp">wasp</option><option value="bee">bee</option><option value="ant">ant</option><option value="fly">fly</option></optgroup><optgroup label="Grasshoppers and friends"><option value="grasshopper">grasshopper</option><option value="mantis">mantis</option><option value="stick">stick insect</option><option value="cockroach">cockroach</option></optgroup><optgroup label="True bugs"><option value="shieldbug">shield bug</option></optgroup>
+        </select>
+      </div>
+      <div class="field">
+        <div class="row" style="justify-content:space-between"><label for="weird">Weirdness</label><span class="val" id="weirdVal">auto</span></div>
+        <input type="range" id="weird" min="0" max="1" step="0.05" value="0.35" disabled>
+        <label class="check"><input type="checkbox" id="weirdAuto" checked> Let the seed decide</label>
+      </div>
+
+      <h2>Plotter</h2>
+      <div class="two">
+        <div class="field"><label for="pens">Colour pens</label><select id="pens"><option value="">Auto</option><option>1</option><option>2</option><option>3</option></select></div>
+        <div class="field"><label for="paper">Paper</label><select id="paper"><option value="a5">A5</option><option value="a4" selected>A4</option><option value="a3">A3</option><option value="letter">Letter</option><option value="square">250 mm square</option></select></div>
+      </div>
+      <div class="field"><label for="palette">Palette</label><select id="palette"><option value="">Auto</option></select></div>
+      <div class="field">
+        <div class="row" style="justify-content:space-between"><label for="spacing">Hatch spacing</label><span class="val" id="spacingVal">0.55 mm</span></div>
+        <input type="range" id="spacing" min="0.35" max="1.2" step="0.05" value="0.55">
+      </div>
+
+      <h2>Pen layers</h2>
+      <div class="pens" id="pens-list"><span class="note">Drawing…</span></div>
+      <div class="row" id="saveRow" hidden>
+        <button type="button" id="saveSvg">Save SVG</button>
+        <button type="button" class="ghost" id="saveJson">Save JSON</button>
+      </div>
+      <span class="note" id="saveNote" aria-live="polite"></span>
+    </form>
+
+    <div class="stage">
+      <div class="plate" id="plate" aria-live="polite"><span class="busy" id="busy">Drawing…</span></div>
+      <div class="det">
+        <div class="label-card">
+          <div class="binomial" id="binomial">—</div>
+          <div class="meta" id="meta">Det. insectdraw</div>
+          <dl class="parts" id="parts"></dl>
+          <div class="legend"><span style="color:var(--flag);font-weight:700">*</span> part borrowed from another kind of insect</div>
+        </div>
+        <div class="panel">
+          <h2>Same plate from the command line</h2>
+          <div class="cmd" id="cmd">node insectdraw.js</div>
+          <div class="row"><button type="button" class="ghost" id="copyCmd">Copy command</button><span class="note" id="copyNote" aria-live="polite"></span></div>
+          <p class="note" style="margin:0">Layers are Inkscape layers, light pens first and black last, so <span style="font-family:var(--label)">vpype read</span> keeps one layer per pen.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="drawer">
+    <div class="drawer-head">
+      <h2 style="font-family:var(--display);margin:0;font-size:20px">Specimen drawer</h2>
+      <div class="row"><span class="note">Click a specimen to put it on the bench.</span><button type="button" class="ghost" id="refill">Refill drawer</button></div>
+    </div>
+    <div class="tiles" id="tiles"></div>
+  </section>
+  <footer class="note" style="padding-block:8px">insectdraw · <a href="https://github.com/FisherTom/insectdraw" style="color:var(--accent)">source on GitHub</a> · inspired by <a href="https://github.com/LingDong-/fishdraw" style="color:var(--accent)">fishdraw</a> by Lingdong Huang</footer>
+</div>
+
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+
+  const main = new Worker('worker.js'), drawerW = new Worker('worker.js');
+
+  const SYL = {g0: ['Cara','Dyti','Lepto','Chryso','Melo','Pyro','Xylo','Antho','Calo','Cteno','Dory','Gono','Lyco','Odo','Platy','Rhyn','Sphe','Zygo','Agri','Luca','Scara','Papi','Morpho','Satu','Noctu','Libel','Vespu','Bombo','Myrme','Acro','Helio','Pseudo','Mega','Ptero'],
+    g2: ['us','a','ella','ides','ops','ia','ra','is','ptera','phila','cera','gaster','myia','odes','ion','ax'],
+    s0: ['auro','nigro','flavi','rubro','macul','sex','quadri','viri','fusc','punct','longi','orn','splend','gigant','cyane','stell','margin','versi','albo','mira','somni','nebul','umbr'],
+    s1: ['ata','atus','ensis','ii','ipes','icornis','ipennis','ella','osa','ina','ulata','ica','alis','oides','ifera']};
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const randomName = () => pick(SYL.g0) + pick(SYL.g2) + ' ' + pick(SYL.s0) + pick(SYL.s1);
+
+  const PALS = ['ladybird','jewel','monarch','morpho','moth','dragonfly','lacewing','wasp','orchid','tropical','rust','sunset','ocean','forest','neon','bronze','plum','candy','arctic','desert','berry'];
+  for (const p of PALS) { const o = document.createElement('option'); o.value = p; o.textContent = p[0].toUpperCase() + p.slice(1); $('palette').appendChild(o); }
+
+  const opts = () => {
+    const o = {seed: $('seed').value.trim() || 'Insecta incognita', paper: $('paper').value, spacing: +$('spacing').value};
+    if ($('arch').value) o.arch = $('arch').value;
+    if (!$('weirdAuto').checked) o.weird = +$('weird').value;
+    if ($('pens').value) o.pens = +$('pens').value;
+    if ($('palette').value) o.palette = $('palette').value;
+    return o;
+  };
+  const cliFor = o => {
+    let c = `node insectdraw.js --seed "${o.seed.replace(/"/g, '')}"`;
+    if (o.arch) c += ` --arch ${o.arch}`;
+    if (o.weird != null) c += ` --weird ${o.weird}`;
+    if (o.pens) c += ` --pens ${o.pens}`;
+    if (o.palette) c += ` --palette ${o.palette}`;
+    if (o.paper !== 'a4') c += ` --paper ${o.paper}`;
+    if (o.spacing !== 0.55) c += ` --spacing ${o.spacing}`;
+    const file = o.seed.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'insect';
+    return c + ` > ${file}.svg`;
+  };
+
+  let reqId = 0, current = null, hidden = new Set();
+  const NICE = {head: 'Head', eyes: 'Eyes', mouth: 'Mouthparts', horn: 'Horns', antenna: 'Antennae', pronotum: 'Pronotum', thorax: 'Thorax', waist: 'Waist', abdomen: 'Abdomen', forewing: 'Forewings', hindwing: 'Hindwings', legs: 'Legs', frontLegs: 'Front legs', hindLegs: 'Hind legs', tail: 'Tail', texture: 'Texture', pattern: 'Body pattern', wingPattern: 'Wing pattern'};
+  const MUT = {extraLegs: 'a fourth pair of legs', extraEyes: 'a second pair of eyes', extraWings: 'a third pair of wings', twinAntennae: 'a second pair of antennae'};
+
+  function draw() {
+    const o = opts(), id = ++reqId;
+    $('busy').hidden = false; $('drawBtn').disabled = true;
+    $('cmd').textContent = cliFor(o);
+    main.postMessage({id, opt: o});
+  }
+  main.onmessage = e => {
+    const r = e.data; if (r.id !== reqId) return;
+    $('busy').hidden = true; $('drawBtn').disabled = false;
+    if (!r.ok) { $('binomial').textContent = 'This specimen failed to draw'; $('meta').textContent = 'Try another name. ' + r.error.split('\n')[0]; return; }
+    current = r; hidden.clear();
+    const plate = $('plate'); plate.querySelectorAll('svg').forEach(s => s.remove());
+    plate.insertAdjacentHTML('beforeend', r.svg.replace(/^<\?xml[^>]*>\s*/, ''));
+    $('binomial').textContent = r.name;
+    const borrowed = Object.values(r.slots).filter(s => s.borrowed).length;
+    let meta = `Det. insectdraw · ${r.arch} body plan · weirdness ${r.weird.toFixed(2)} · ${borrowed} borrowed part${borrowed === 1 ? '' : 's'}`;
+    if (r.mut.length) meta += ` · mutation: ${r.mut.map(m => MUT[m]).join(', ')}`;
+    $('meta').textContent = meta;
+    const dl = $('parts'); dl.textContent = '';
+    for (const [k, s] of Object.entries(r.slots)) {
+      const d = document.createElement('div'); if (s.borrowed) d.className = 'borrowed';
+      const dt = document.createElement('dt'); dt.textContent = NICE[k] || k;
+      const dd = document.createElement('dd'); dd.textContent = s.v + (k === 'antenna' && r.antenna2 ? ' + ' + r.antenna2 : '');
+      d.append(dt, dd); dl.appendChild(d);
+    }
+    renderPens();
+  };
+  function renderPens() {
+    const box = $('pens-list'); box.textContent = '';
+    current.layers.forEach((L, i) => {
+      const row = document.createElement('label'); row.className = 'pen';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !hidden.has(i); cb.id = 'pen' + i;
+      cb.addEventListener('change', () => { cb.checked ? hidden.delete(i) : hidden.add(i); const g = $('plate').querySelector('#layer' + (i + 1)); if (g) g.style.visibility = cb.checked ? '' : 'hidden'; });
+      const sw = document.createElement('span'); sw.className = 'sw'; sw.style.background = L.color;
+      const nm = document.createElement('span'); nm.textContent = `${i + 1} · ${L.name}`;
+      const n = document.createElement('span'); n.className = 'n'; n.textContent = `${(L.mm / 1000).toFixed(1)} m ink`;
+      row.append(cb, sw, nm, n); box.appendChild(row);
+    });
+  }
+
+  // drawer of fresh specimens, rendered on a second worker so the bench stays responsive
+  let drawerId = 0, drawerGen = 0;
+  const pending = new Map();
+  function refill() {
+    const gen = ++drawerGen, tiles = $('tiles'); tiles.textContent = ''; pending.clear();
+    for (let i = 0; i < 8; i++) {
+      const name = randomName(), t = document.createElement('div');
+      t.className = 'tile loading'; t.tabIndex = 0; t.setAttribute('role', 'button'); t.setAttribute('aria-label', 'Put ' + name + ' on the bench');
+      t.innerHTML = '<div class="art">drawing…</div><div class="nm"></div><div class="ar"></div>';
+      t.querySelector('.nm').textContent = name;
+      const go = () => { $('seed').value = name; $('arch').value = ''; $('weirdAuto').checked = true; syncWeird(); draw(); window.scrollTo({top: 0, behavior: 'smooth'}); };
+      t.addEventListener('click', go); t.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+      tiles.appendChild(t);
+      const id = ++drawerId; pending.set(id, {t, gen});
+      drawerW.postMessage({id, opt: {seed: name, label: false, margin: 4, paper: 'a5', spacing: 1.0, thumb: true, sort: false}});
+    }
+  }
+  drawerW.onmessage = e => {
+    const r = e.data, p = pending.get(r.id); if (!p || p.gen !== drawerGen) return;
+    p.t.classList.remove('loading');
+    const art = p.t.querySelector('.art');
+    if (r.ok) { art.innerHTML = r.svg.replace(/^<\?xml[^>]*>\s*/, ''); p.t.querySelector('.ar').textContent = r.arch + (r.weird > 0.5 ? ' · strange' : ''); }
+    else art.textContent = 'failed';
+  };
+
+  // downloads
+  (async () => {
+    // inside Claude: use the downloads capability. Opened as a local file: a normal browser download.
+    const inClaude = !!(window.claude && window.claude.use);
+    const cap = inClaude ? await window.claude.use('downloads').catch(() => null) : null;
+    if (inClaude && !cap) return;
+    const dl = cap || {save: async ({filename, data}) => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([data], {type: filename.endsWith('.svg') ? 'image/svg+xml' : 'application/json'}));
+      a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      return {status: 'saved'};
+    }};
+    $('saveRow').hidden = false;
+    const save = async (ext) => {
+      if (!current) return;
+      const file = current.name.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.' + ext;
+      let data = ext === 'svg' ? current.svg : current.json;
+      if (ext === 'svg' && hidden.size) { // drop hidden layers from the saved file
+        const doc = new DOMParser().parseFromString(current.svg, 'image/svg+xml');
+        hidden.forEach(i => doc.getElementById('layer' + (i + 1))?.remove());
+        data = new XMLSerializer().serializeToString(doc);
+      }
+      try { await dl.save({filename: file, data}); $('saveNote').textContent = 'Saved ' + file; }
+      catch (err) { $('saveNote').textContent = err && err.code === 'declined' ? 'Save cancelled.' : 'Saving is not available here.'; }
+    };
+    $('saveSvg').addEventListener('click', () => save('svg'));
+    $('saveJson').addEventListener('click', () => save('json'));
+  })();
+
+  $('copyCmd').addEventListener('click', () => {
+    const txt = $('cmd').textContent;
+    navigator.clipboard.writeText(txt).then(() => { $('copyNote').textContent = 'Copied'; }, () => {
+      const r = document.createRange(); r.selectNodeContents($('cmd')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $('copyNote').textContent = 'Selected, press Ctrl+C';
+    });
+  });
+  const syncWeird = () => { const auto = $('weirdAuto').checked; $('weird').disabled = auto; $('weirdVal').textContent = auto ? 'auto' : (+$('weird').value).toFixed(2); };
+  $('weirdAuto').addEventListener('change', () => { syncWeird(); draw(); });
+  $('weird').addEventListener('input', syncWeird);
+  $('spacing').addEventListener('input', () => { $('spacingVal').textContent = (+$('spacing').value).toFixed(2) + ' mm'; });
+  for (const id of ['weird', 'spacing']) $(id).addEventListener('change', draw);
+  for (const id of ['arch', 'pens', 'paper', 'palette']) $(id).addEventListener('change', draw);
+  $('controls').addEventListener('submit', e => { e.preventDefault(); draw(); });
+  $('newBtn').addEventListener('click', () => { $('seed').value = randomName(); draw(); });
+  $('refill').addEventListener('click', refill);
+  syncWeird(); draw(); refill();
+})();
+</script>
+
+</body>
+</html>
